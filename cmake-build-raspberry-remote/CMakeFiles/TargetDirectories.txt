@@ -1,0 +1,6 @@
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/rebuild_cache.dir
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/edit_cache.dir
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/server_npq.dir
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/client_npq.dir
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/client.dir
+/home/pi/Documents/pqTLS-master/cmake-build-raspberry-remote/CMakeFiles/server.dir

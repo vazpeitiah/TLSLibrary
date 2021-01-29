@@ -1,0 +1,4 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/ponchohunt1980/Documents/pqtls-master/pqTLS-master
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ponchohunt1980/Documents/pqtls-master/pqTLS-master/cmake-build-server-remote
