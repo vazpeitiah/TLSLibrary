@@ -3,8 +3,10 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+
+#include "kyber/ref/api.h"
+#include "kyber/ref/fips202.h"
 
 #include "params.h"
 
@@ -12,99 +14,13 @@
 #include "dilithium1aes/params.h"
 #include "dilithium1aes/sign.h"
 
-#include "kyber/apiky.h"
-#include "kyber/fips202ky.h"
-#include "kyber/kem.h"
-#include "kyber/rngky.h"
-#include <errno.h>
-
-
 #include "opensslaes.h"
 #include "pq.h"
+#include "vault.h"
 
 unsigned long long cyclesAES;
-unsigned long long cyclesKY;
+unsigned long long cyclesNH;
 unsigned long long cyclesDil;
-
-int **readmatrix(size_t *rows, size_t *cols, const char *filename)
-{
-    if(rows == NULL || cols == NULL || filename == NULL)
-        return NULL;
-
-    *rows = 0;
-    *cols = 0;
-
-    FILE *fp = fopen(filename, "r");
-
-    if(fp == NULL)
-    {
-        fprintf(stderr, "could not open %s: %s\n", filename, strerror(errno));
-        return NULL;
-    }
-
-    int **matrix = NULL, **tmp;
-
-    char line[1024];
-
-    while(fgets(line, sizeof line, fp))
-    {
-        if(*cols == 0)
-        {
-            // determine the size of the columns based on
-            // the first row
-            char *scan = line;
-            int dummy;
-            int offset = 0;
-            while(sscanf(scan, "%d%n", &dummy, &offset) == 1)
-            {
-                scan += offset;
-                (*cols)++;
-            }
-        }
-
-        tmp = realloc(matrix, (*rows + 1) * sizeof *matrix);
-
-        if(tmp == NULL)
-        {
-            fclose(fp);
-            return matrix; // return all you've parsed so far
-        }
-
-        matrix = tmp;
-
-        matrix[*rows] = calloc(*cols, sizeof *matrix[*rows]);
-
-        if(matrix[*rows] == NULL)
-        {
-            fclose(fp);
-            if(*rows == 0) // failed in the first row, free everything
-            {
-                fclose(fp);
-                free(matrix);
-                return NULL;
-            }
-
-            return matrix; // return all you've parsed so far
-        }
-
-        int offset = 0;
-        char *scan = line;
-        for(size_t j = 0; j < *cols; ++j)
-        {
-            if(sscanf(scan, "%d%n", matrix[*rows] + j, &offset) == 1)
-                scan += offset;
-            else
-                matrix[*rows][j] = 0; // could not read, set cell to 0
-        }
-
-        // incrementing rows
-        (*rows)++;
-    }
-
-    fclose(fp);
-
-    return matrix;
-}
 
 void recv_timeout(int socket, unsigned char *c, double timeout)
 {
@@ -235,9 +151,9 @@ int dilithium1(int sock, int opt)
         if(ret)
         {
             flag = 1;
-            strcpy(buffer, "Generation the public/private keypair failed (Dilithium)");
+            strcpy((char *)buffer, "Generation the public/private keypair failed (Dilithium)");
             printf("ERROR: %s\n", buffer);
-            send(sock, buffer, strlen(buffer), 0);
+            send(sock, buffer, strlen((char *)buffer), 0);
             return flag;
         }
 
@@ -246,9 +162,9 @@ int dilithium1(int sock, int opt)
         if(ret)
         {
             flag = 1;
-            strcpy(buffer, "Sign failed (Dilithium)");
+            strcpy((char *)buffer, "Sign failed (Dilithium)");
             printf("ERROR: %s\n", buffer);
-            send(sock, buffer, strlen(buffer), 0);
+            send(sock, buffer, strlen((char *)buffer), 0);
             return flag;
         }
 
@@ -301,18 +217,18 @@ int dilithium1(int sock, int opt)
         ret = crypto_sign_open(m2, &mlen, sm, smlen, pk); //Verification
 
         if(ret) {
-            sprintf(buffer, "Verification failed <%d>", ret);
+            sprintf((char *)buffer, "Verification failed <%d>", ret);
             flag = 1;
         }
         else if(mlen != MLEN) {
-            strcpy(buffer, "Message lengths don't match");
+            strcpy((char *)buffer, "Message lengths don't match");
             flag = 1;
         }
         else
         {
             for(j = 0; j < mlen; ++j) {
                 if(m[j] != m2[j]) {
-                    strcpy(buffer, "Messages don't match");
+                    strcpy((char *)buffer, "Messages don't match");
                     flag = 1;
                 }
             }
@@ -323,49 +239,47 @@ int dilithium1(int sock, int opt)
         if(flag)
         {
             printf("ERROR: %s\n", buffer);
-            send(sock, buffer, strlen(buffer), 0);
+            send(sock, buffer, strlen((char *)buffer), 0);
         }
     }
 
     return flag;
 }
+/****** Dilithium <- ******/
 
 /****** -> Kyber ******/
 // opt = 1: Server; opt = 0: Client
-int kyber1(int sock, int opt, unsigned char *ss, unsigned char *nsk)
+int kyber1024(int sock, int opt, unsigned char *ss)
 {
     int ret;
     int flag = 0;
     unsigned char buffer[NBYTES];
-    unsigned char pk[CRYPTO_PUBLICKEYBYTES];
-    unsigned char sk[CRYPTO_SECRETKEYBYTES];
-    unsigned char ct[CRYPTO_CIPHERTEXTBYTES];
+    unsigned char pk[pqcrystals_kyber1024_ref_PUBLICKEYBYTES];
+    unsigned char sk[pqcrystals_kyber1024_ref_SECRETKEYBYTES];
+    unsigned char ct[pqcrystals_kyber1024_ref_CIPHERTEXTBYTES];
 
     bzero(buffer, NBYTES);
-    bzero(pk, CRYPTO_PUBLICKEYBYTES);
-    bzero(ct, CRYPTO_CIPHERTEXTBYTES);
-    bzero(nsk, CRYPTO_BYTES);
+    bzero(pk, pqcrystals_kyber1024_ref_PUBLICKEYBYTES);
+    bzero(ct, pqcrystals_kyber1024_ref_CIPHERTEXTBYTES);
 
     //KeyGen and Desencapsulate (server)
     if (opt)
     {
         bzero(buffer, NBYTES);
-        ret = crypto_kem_keypair(pk, sk); //KeyGen
-        
-        memcpy(nsk, sk, CRYPTO_BYTES);
+        ret = pqcrystals_kyber1024_ref_keypair(pk, sk); //KeyGen
 
         send(sock, &ret, sizeof(ret), 0);
         if(ret)
         {
             flag = 1;
-            strcpy(buffer, "Generation the public/private keypair failed (Kyber)");
+            strcpy((char *)buffer, "Generation the public/private keypair failed (Kyber)");
             printf("ERROR: %s\n", buffer);
-            send(sock, buffer, strlen(buffer), 0);
+            send(sock, buffer, strlen((char *)buffer), 0);
             return flag;
         }
 
-        send(sock, pk, CRYPTO_PUBLICKEYBYTES, 0);
-            
+        send(sock, pk, pqcrystals_kyber1024_ref_PUBLICKEYBYTES, 0);
+
         bzero(buffer, NBYTES);
         ret = read(sock, &flag, sizeof(flag));
         if (flag)
@@ -378,22 +292,22 @@ int kyber1(int sock, int opt, unsigned char *ss, unsigned char *nsk)
 
         bzero(buffer, NBYTES);
         recv_timeout(sock, buffer, TW);
-        memcpy(ct, buffer, CRYPTO_CIPHERTEXTBYTES);
+        memcpy(ct, buffer, pqcrystals_kyber1024_ref_CIPHERTEXTBYTES);
 
-        ret = crypto_kem_dec(ss, ct, sk); //Desencapsulate
+        ret = pqcrystals_kyber1024_ref_dec(ss, ct, sk); //Desencapsulate
         send(sock, &ret, sizeof(ret), 0);
         if (ret)
         {
             flag = 1;
-            strcpy(buffer, "Encapsultaion failed");
-            send(sock, buffer, strlen(buffer), 0);
+            strcpy((char *)buffer, "Encapsultaion failed");
+            send(sock, buffer, strlen((char *)buffer), 0);
             printf("ERROR: %d\n", ret);
             return flag;
         }
     }
-    else // Encapsulate
+    else // Encapsulate (Codigo del cliente)
     {
-        bzero(pk, CRYPTO_PUBLICKEYBYTES);
+        bzero(pk, pqcrystals_kyber1024_ref_PUBLICKEYBYTES);
         // Keypair
         ret = read(sock, &flag, sizeof(flag));
         if (flag)
@@ -404,17 +318,16 @@ int kyber1(int sock, int opt, unsigned char *ss, unsigned char *nsk)
             return flag;
         }
 
-        //ret = read(sock, pk, CRYPTO_PUBLICKEYBYTES_NH);
+        //ret = read(sock, pk, pqcrystals_kyber1024_ref_PUBLICKEYBYTES);
         recv_timeout(sock, pk, TW);
 
-        ret = crypto_kem_enc(ct, ss, pk); // Encapsulate
-        
+        ret = pqcrystals_kyber1024_ref_enc(ct, ss, pk); // Encapsulate
         send(sock, &ret, sizeof(ret), 0);
         if(ret)
         {
             flag = 1;
-            strcpy(buffer, "Desencapsultaion failed");
-            send(sock, buffer, strlen(buffer), 0);
+            strcpy((char *)buffer, "Desencapsultaion failed");
+            send(sock, buffer, strlen((char *)buffer), 0);
             return flag;
         }
 
@@ -434,144 +347,79 @@ int kyber1(int sock, int opt, unsigned char *ss, unsigned char *nsk)
 /****** Kyber <- ******/
 
 /****** -> AES ******/
-void symmetric_enc_dec(int sock, int flag, unsigned char *k1, unsigned char *k2, unsigned char *msg)
-{
-    int decryptedtext_len;
-    /*
-      * Buffer for ciphertext. Ensure the buffer is long enough for the
-      * ciphertext which may be longer than the plaintext, depending on the
-      * algorithm and mode.
-    */
-    unsigned char ciphertext[BS];
-    /* Buffer for the decrypted text */
-    //unsigned char decryptedtext[BS];
+void symmetric_enc_dec(int sock, int flag, unsigned char *k1, unsigned char *k2, unsigned char *msg) {
+    int dlen, elen;
+    unsigned char ciphertext[BS * 10];
 
-    bzero(ciphertext, BS);
+    bzero(ciphertext, BS * 10);
 
-    // Server
-    if (flag)
-    {
-        
-        //recv_timeout(sock, ciphertext, TW);
-        recv(sock, ciphertext, BS, 0);
-        // Decrypt the ciphertext
-        decryptedtext_len = decrypt(ciphertext, strlen(ciphertext), k1, k2, msg);
-        // Add a NULL terminator. We are expecting printable text
-        msg[decryptedtext_len] = '\0';
+    if (flag) { // -- Codigo del servidor --
+        int cipher_len = recv(sock, ciphertext, BS * 10, 0);
+        ciphertext[cipher_len] = '\0';
+                                                                        
+        dlen = decrypt(ciphertext, cipher_len, k1, k2, msg);    // Decrypt the ciphertext
+        msg[dlen] = '\0';   //Add a NULL terminator. We are expecting printable text */
     }
-    else // client
-    {
-        // Encrypt the plaintext (key, iv)
-        encrypt(msg, strlen(msg), k1, k2, ciphertext);
-        send(sock, ciphertext, strlen(ciphertext), 0);
-        
-        // 0.1 seg
-        usleep(1000000);
-    }
+    else {  // -- Codigo del cliente --
+        elen = encrypt(msg, strlen((char *)msg), k1, k2, ciphertext);   // Encrypt the plaintext (key, iv)
 
-    return;
+        send(sock, ciphertext, elen, 0);
+        usleep(1000000); // sleep 0.1 seg
+    }
 }
 
-/****** AES <- ******/
-void safe_channel(int sock, int flag) 
-{
-    unsigned char sk[CRYPTO_BYTES];
-    unsigned char ivsk[CRYPTO_BYTES];
+void safe_channel(int sock, int flag) {
+    unsigned char ss[pqcrystals_kyber1024_ref_BYTES];       /* Clave compartida */
+    unsigned char vault[BS];                                /* Vault concatenado en una cadena */
 
-    // vault and ssVault
-    unsigned char vault[BS];
-    unsigned char ssVault[BS];
-    unsigned char message[BS];
-    bzero(message, BS);
-
-    bzero(sk, CRYPTO_BYTES);
-    bzero(ivsk, CRYPTO_BYTES);
+    bzero(ss, pqcrystals_kyber1024_ref_BYTES);
     bzero(vault, BS);
-    bzero(ssVault, BS);
 
-    // Client
-    if (flag == 0)
-    {
-        size_t cols, rows;
-        int **matrix = readmatrix(&rows, &cols, "matlabcode/results/Vault105-1.txt");
-
-        for(size_t i = 0; i < rows; ++i) //Concatena la matrix en una cadena 
-        {
-            for(size_t j = 0; j < cols; ++j){
-                int length = snprintf( NULL, 0, "%d", matrix[i][j] );
-                char* str = malloc( length + 1 );
-                snprintf( str, length + 1, "%d", matrix[i][j] );
-                strcat(vault, str);
-                if(!(i == rows - 1 && j == cols - 1))
-                    strcat(vault, ",");
-            }
-        }
-
-        // freeing memory of matrix
-        for(size_t i = 0; i < rows; ++i)
-            free(matrix[i]);
-        free(matrix);
-   
-        shake256(ssVault, BS, vault, BS);  // Aplica sha-3 256 al vault
-
-        strcat(message, "hello world!");
-        printf("Client: vault => %s\n", vault);
+    if (flag == 0) { /* Codigo del cliente */ 
+        /* Obtener vault, como cadena de texto, desde archivo de texto */
+        getVaultStr((char *)vault, "matlabcode/results/Vault105-1.txt");
+        shake256(ss, pqcrystals_kyber1024_ref_BYTES, vault, BS);
+        printf("Client: vault = %s\n", vault);
     }
 
-    unsigned long long initCycles = rdtsc();
-    if (kyber1(sock, flag, sk, sk)) // KEM
-    { return; }
-    cyclesKY = rdtsc() - initCycles;
+    unsigned long long initCycles = rdtsc(); 
+    if(kyber1024(sock, flag, ss)) { return; }      /* Obtener la clave compartida utilizando el KEM */
 
-    shake256(ivsk, CRYPTO_BYTES, sk, CRYPTO_BYTES);
+    cyclesNH = rdtsc() - initCycles;
 
     initCycles = rdtsc();
-    symmetric_enc_dec(sock, flag, sk, ivsk, vault);
+    symmetric_enc_dec(sock, flag, ss, ss, vault);   /* Aplica AES 256 al vault */
     cyclesAES = rdtsc() - initCycles;
 
-    // Server
-    if (flag)
-    {
-        printf("Server: vault => %s\n", vault);
+    if (flag == 1) {    // Codigo del servidor
+        printf("Server: vault = %s\n", vault);
     }
 }
 
 /****** -> TLS ******/
-void TLS(int sock, char *opt, int opt2, int flag)
-{
-    //opt2 = 0 no sign || opt2 = 1 server cert verify || opt2 = 2 both verify
+/* opt2 = 0 no sign || opt2 = 1 server cert verify || opt2 = 2 both verify */
+void TLS(int sock, char *opt, int opt2, int flag) {
     unsigned long long initCycles;
 
-    if (opt2 == 0)//no sign
-    {
+    if (opt2 == 0) {                        /* No sign */
         cyclesDil = 0;
         safe_channel(sock, flag);
-    }
-    else if (opt2 == 1)//verificacion server cert
-    {
+    } else if (opt2 == 1) {                 /* Verificacion server cert */
         initCycles = rdtsc();
-        if (dilithium1(sock, flag))
-        {
+        if (dilithium1(sock, flag)) {
+            return;
+        }
+        cyclesDil = rdtsc() - initCycles;
+        safe_channel(sock, flag);
+    } else if (opt2 == 2) {                 /* Both */
+        initCycles = rdtsc();
+        if (dilithium1(sock, flag)) {
+            return;
+        }
+        if (dilithium1(sock, !flag)) {
             return;
         }
         cyclesDil = rdtsc() - initCycles;
         safe_channel(sock, flag);
     }
-    else if (opt2 == 2) // Both
-    {
-        initCycles = rdtsc();
-        if (dilithium1(sock, flag))
-        {
-            return;
-        }
-        if (dilithium1(sock, !flag))
-        {
-            return;
-        }
-        cyclesDil = rdtsc() - initCycles;
-        safe_channel(sock, flag);
-    }
-
-    return;
 }
-/****** TLS <- ******/\

@@ -11,7 +11,7 @@
 #define FCLIENT 0 /* Flag value client */
 
 extern unsigned long long cyclesAES;    /* Cycles count var for AES */
-extern unsigned long long cyclesKY;     /* Cycles count var for Kyber */
+extern unsigned long long cyclesNH;     /* Cycles count var for Kyber */
 extern unsigned long long cyclesDil;    /* Cycles count var for Dilithium */
 
 //argv[1] = dilithium || argv[1] = newhope
@@ -57,19 +57,17 @@ int main(int argc, char const *argv[]) {
     unsigned long long initCycles = rdtsc();
     TLS(sock, opt1, opt2, FCLIENT);                         /* Init pq functions */      
     unsigned long long totalCycles = rdtsc() - initCycles;
-
-    int cs = shutdown(sock, 2); /* Shutdown client socket */
-
-    switch (opt2) { /* Append register to log file */
+    shutdown(sock, 2);                                      /* Shutdown client socket */
+    switch (opt2) {                                         /* Append register to log file */
         default:
         case 0:
-            mfiles("./Classic-No-Dilitium", cyclesDil, cyclesKY, cyclesAES, totalCycles);
+            mfiles("./Classic-No-Dilitium", cyclesDil, cyclesNH, cyclesAES, totalCycles);
             break;
         case 1:
-            mfiles("./Classic-Single-Dilitium", cyclesDil, cyclesKY, cyclesAES, totalCycles);
+            mfiles("./Classic-Single-Dilitium", cyclesDil, cyclesNH, cyclesAES, totalCycles);
             break;
         case 2:
-            mfiles("./Classic-Double-Dilitium", cyclesDil, cyclesKY, cyclesAES, totalCycles);
+            mfiles("./Classic-Double-Dilitium", cyclesDil, cyclesNH, cyclesAES, totalCycles);
             break;
     }
     

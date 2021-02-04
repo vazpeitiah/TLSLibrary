@@ -25,8 +25,8 @@ void printBstr2(char *S, unsigned char *A, unsigned long long len)
   printf("\n");
 }
 
-void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-            unsigned char *iv, unsigned char ciphertext[BS])
+int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+            unsigned char *iv, unsigned char *ciphertext)
 {
   EVP_CIPHER_CTX *ctx;
 
@@ -65,16 +65,17 @@ void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
   ciphertext_len += len;
 
   //printBstr2("ct = ", ciphertext, ciphertext_len);
+  //printf("len = %d\n", ciphertext_len);
   /* Clean up */
   EVP_CIPHER_CTX_free(ctx);
 
   //return ciphertext_len;
-  return;
+  return ciphertext_len;
 }
 
 
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-            unsigned char *iv, unsigned char plaintext[BS])
+            unsigned char *iv, unsigned char *plaintext)
 {
   EVP_CIPHER_CTX *ctx;
 

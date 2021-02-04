@@ -1,4 +1,3 @@
-/*--- SERVER ---*/
 #include <stdio.h> 
 #include <unistd.h> 
 #include <sys/socket.h> 
@@ -6,6 +5,7 @@
 #include <netinet/in.h> 
 #include <string.h> 
 #include <errno.h>
+
 #include "pq.h"
 
 #define PORT 9999   /* Default port to bind server */
@@ -52,11 +52,13 @@ int main(int argc, char const *argv[]) {
     printf("[+] Server start lisntenig on port %d\n", PORT);
 
     while (1) {
+        printf("[+] Esperando peticiones\n");
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address,  
                            (socklen_t*)&addrlen))<0) {
             perror("accept"); 
             exit(EXIT_FAILURE); 
         }
+        printf("[+] Peticion recibida\n");
 
         len = recv(new_socket, &opt1, sizeof(opt1), 0); /* Recive opt1 from client */
         opt1[len] = '\0';                               /* put end of string character */
@@ -68,7 +70,7 @@ int main(int argc, char const *argv[]) {
 
         TLS(new_socket, opt1, opt2Int, FSERVER);    /* Init pq functions */
 
-        int cs = shutdown(new_socket, 2);   /* Shutdown client socket */
+        shutdown(new_socket, 2);   /* Shutdown client socket */
         fflush(stdout);                     /* Clean output buffer */ 
 
         bzero(opt1, NSB);   /* Clean var opt1 */
