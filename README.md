@@ -51,6 +51,5 @@ Esto compilará los códigos fuentes y generará el archivo ejecutable del clien
   ./server
   ./client 0 kyber
 ```
-Nota: el cliente recibe 2 parameros: el primero determina si queremos utilizar dilithium (0 no usar, 1 usar solo en el servidor, 2 usar en ambos) y el segundo el tipo de algoritmo que usara (kyber o newhope)
-
+Nota: el cliente recibe 2 parametros: el primero determina si queremos utilizar dilithium (0 no usar, 1 usar solo en el servidor, 2 usar en ambos) y el segundo el tipo de algoritmo que usará (kyber o newhope)
 
