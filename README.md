@@ -1,6 +1,6 @@
 # TLSLibrary
 
-Biblioteca TLS para enviar datos de forma segura utilizadon algoritmos de critografía postcuantica.
+Biblioteca TLS para enviar datos de forma segura utilizando los algoritmos de criptografía post cuántica Kyber y Dilithium desarrollados por Pq-crystals.
 
 ## Instrucciones para compilar y ejecutar la biblioteca TLS.
 Actualmente la compilación y ejecución solo puede realizarse en sistemas operativos linux, preferentemente Ubuntu o cualquier distro basada en este.
