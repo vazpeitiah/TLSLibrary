@@ -4,7 +4,7 @@
 
 #define NSB  1024
 
-void TLS(int sock, char *opt, int opt2, int flag);
+void TLS(int sock, int opt1, int opt2, int flag);
 void mfiles (char *filename, unsigned long long dilithium, unsigned long long newhope, unsigned long long aes, unsigned long long total);
 
 #if defined(__i386__)

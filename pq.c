@@ -398,20 +398,19 @@ void safe_channel(int sock, int flag) {
 
 /****** -> TLS ******/
 /* opt2 = 0 no sign || opt2 = 1 server cert verify || opt2 = 2 both verify */
-void TLS(int sock, char *opt, int opt2, int flag) {
+void TLS(int sock, int opt1, int opt2, int flag) {
     unsigned long long initCycles;
-
-    if (opt2 == 0) {                        /* No sign */
+    if (opt2 == 0) {                        // No sign
         cyclesDil = 0;
         safe_channel(sock, flag);
-    } else if (opt2 == 1) {                 /* Verificacion server cert */
+    } else if (opt2 == 1) {                 // Verificacion server cert
         initCycles = rdtsc();
         if (dilithium1(sock, flag)) {
             return;
         }
         cyclesDil = rdtsc() - initCycles;
         safe_channel(sock, flag);
-    } else if (opt2 == 2) {                 /* Both */
+    } else if (opt2 == 2) {                 // Both
         initCycles = rdtsc();
         if (dilithium1(sock, flag)) {
             return;

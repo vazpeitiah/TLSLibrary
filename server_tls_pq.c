@@ -8,19 +8,20 @@
 
 #include "pq.h"
 
-#define PORT 9999   /* Default port to bind server */
-#define FSERVER 1   /* Flag value server */
+#define PORT 9999       // Default port to bind server 
+#define FSERVER 1       // Flag value server
+#define MAX_CLIENTS 3   // Max number of clients
 
 int main(int argc, char const *argv[]) {
-    int server_fd;                  /* Socket fd server */
-    int new_socket;                 /* Socket fd clients */
-    struct sockaddr_in address;     /* Server address */
+    int server_fd;                  // Socket fd server 
+    int new_socket;                 // Socket fd clients 
+    struct sockaddr_in address;     // Server address 
     int optval = 1;
-    int len;                        /* Length of value recive from clients */
-    int addrlen = sizeof(address);  /* Client address */ 
+    int len;                        // Length of value recive from clients 
+    int addrlen = sizeof(address);  // Client address  
 
-    char opt1[NSB] = {0}; /* Opt1 => dilithium || kyber */
-    char opt2[NSB] = {0}; /* Opt1 => 0 no sign || 1 server cert verify || 2 both verify*/
+    char opt1[NSB] = {0}; // Opt1 => 1 use safe chanel || 0 not use safe chanel 
+    char opt2[NSB] = {0}; // Opt2 => 0 no sign || 1 server cert verify || 2 both verify
        
     // Creating socket file descriptor with tcp
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -36,7 +37,7 @@ int main(int argc, char const *argv[]) {
 
     address.sin_family = AF_INET; 
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons( PORT );       /* Set port PORT to address server */
+    address.sin_port = htons( PORT );       // Set port PORT to address server 
        
     // Forcefully attaching socket to the port PORT 
     if (bind(server_fd, (struct sockaddr *)&address,sizeof(address))<0) {
@@ -45,7 +46,7 @@ int main(int argc, char const *argv[]) {
     } 
 
     // Start to listen request from clients
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, MAX_CLIENTS) < 0) {
         perror("listen"); 
         exit(EXIT_FAILURE); 
     }
@@ -60,21 +61,22 @@ int main(int argc, char const *argv[]) {
         }
         printf("[+] Peticion recibida\n");
 
-        len = recv(new_socket, &opt1, sizeof(opt1), 0); /* Recive opt1 from client */
-        opt1[len] = '\0';                               /* put end of string character */
+        len = recv(new_socket, &opt1, NSB, 0);  // Recive opt1 from client 
+        opt1[len] = '\0';                       // put end of string character 
+        len = recv(new_socket, &opt2, NSB, 0);  // Recive opt2 from client 
+        opt2[len] = '\0';                       // put end of string character 
 
-        len = recv(new_socket, &opt2, sizeof(opt2), 0); /* Recive opt2 from client */
-        opt2[len] = '\0';                               /* put end of string character */
+        int opt1Int = atoi(opt2);   // Cast opt2 to integer 
+        int opt2Int = atoi(opt2);   // Cast opt2 to integer 
+        //printf("%d, %d/n", opt1Int, opt2Int);
 
-        int opt2Int = atoi(opt2);   /* Cast opt2 to integer */
+        TLS(new_socket, opt1Int, opt2Int, FSERVER);    // Init pq functions 
 
-        TLS(new_socket, opt1, opt2Int, FSERVER);    /* Init pq functions */
+        shutdown(new_socket, 2);   // Shutdown client socket */
+        fflush(stdout);                     // Clean output buffer */ 
 
-        shutdown(new_socket, 2);   /* Shutdown client socket */
-        fflush(stdout);                     /* Clean output buffer */ 
-
-        bzero(opt1, NSB);   /* Clean var opt1 */
-        bzero(opt2, NSB);   /* Clean var opt2 */
+        bzero(opt1, NSB);   // Clean var opt1 */
+        bzero(opt2, NSB);   // Clean var opt2 */
     }
 
     return 0; 

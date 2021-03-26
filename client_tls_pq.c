@@ -3,34 +3,37 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "pq.h"
 
-#define PORT 9999 /* default port to connecto to server */
-#define FCLIENT 0 /* Flag value client */
+#define PORT 9999 // default port to connecto to server 
+#define FCLIENT 0 // Flag value client 
 
-extern unsigned long long cyclesAES;    /* Cycles count var for AES */
-extern unsigned long long cyclesNH;     /* Cycles count var for Kyber */
-extern unsigned long long cyclesDil;    /* Cycles count var for Dilithium */
+extern unsigned long long cyclesAES;    // Cycles count var for AES 
+extern unsigned long long cyclesNH;     // Cycles count var for Kyber 
+extern unsigned long long cyclesDil;    // Cycles count var for Dilithium 
 
 //argv[1] = dilithium || argv[1] = newhope
 //argv[2] = 0 no sign || argv[2] = 1 server cert verify || argv[2] = 2 both verify
 
 int main(int argc, char const *argv[]) {
-    int sock = 0;                   /* Socket fd for client*/
-    struct sockaddr_in serv_addr;   /* For assign server address */
-
-    char opt1[NSB]; /* Assign argv[1] */
-    int opt2;       /* Save integer value of argv[2] */
-
+    int sock = 0;                   // Socket fd for client
+    struct sockaddr_in serv_addr;   // For assign server address 
+    
+    int opt1;   // Save integer value of argv[2]
+    int opt2;   // Save integer value of argv[2]
+  
     if (argc < 2) {
-        printf("usage: %s <opts1> <opts2>\n", argv[0]);
+        printf("usage: %s <opt1> <opt2>\n", argv[0]);
+        printf("<opt1>: 1 use safe chanel || 0 not use safe chanel\n");
+        printf("<opt2>: 0 no sign || 1 server cert verify || 2 both verify\n");
         return -1;
     }
 
-    memcpy(opt1, argv[1], strlen(argv[1])); /* Copy argv[1] in opt1 */
-    opt2 = atoi(argv[2]);                   /* Cast argv[2] to integer */
+    opt1 = atoi(argv[1]);   // Cast argv[1] to integer
+    opt2 = atoi(argv[2]);   // Cast argv[2] to integer 
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
@@ -38,7 +41,7 @@ int main(int argc, char const *argv[]) {
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT); /* Assingn PORT to address server */
+    serv_addr.sin_port = htons(PORT); // Assingn PORT to address server 
 
     // Convert IPv4 and IPv6 addresses from text to binary form
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
@@ -51,14 +54,16 @@ int main(int argc, char const *argv[]) {
         return -1;
     }
 
-    send(sock, opt1, sizeof(opt1), 0);          /* Send opt1 to server as string */
-    send(sock, argv[2], sizeof(argv[2]), 0);    /* Send opt2 to server as string */
+    send(sock, argv[1], sizeof(argv[1]), 0);    // Send opt1 to server as string 
+    sleep(1);
+    send(sock, argv[2], sizeof(argv[2]), 0);    // Send opt2 to server as string 
 
-    unsigned long long initCycles = rdtsc();
-    TLS(sock, opt1, opt2, FCLIENT);                         /* Init pq functions */      
+    unsigned long long initCycles = rdtsc();                         
+    TLS(sock, opt1, opt2, FCLIENT);                         // Init pq functions 
     unsigned long long totalCycles = rdtsc() - initCycles;
-    shutdown(sock, 2);                                      /* Shutdown client socket */
-    switch (opt2) {                                         /* Append register to log file */
+    shutdown(sock, 2);                                      // Shutdown client socket 
+
+    switch (opt2) {                                         // Append register to log file 
         default:
         case 0:
             mfiles("./Classic-No-Dilitium", cyclesDil, cyclesNH, cyclesAES, totalCycles);
