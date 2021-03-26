@@ -31,7 +31,7 @@ Después debes agregar 3 banderas al sistema, para ello ejecutamos los comandos:
  export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
 ```
 
-Luego, debemos crear los archivos .so de Kyber. Para ello, nos movemos a la carpeta `kyber/` y ejecutamos el comando:
+Luego, debemos crear los archivos .so de Kyber. Para ello, nos movemos a la carpeta `kyber/ref/` y ejecutamos el comando:
 
 ```shell
   make shared
