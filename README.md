@@ -2,7 +2,7 @@
 
 Biblioteca TLS para enviar datos de forma segura utilizando los algoritmos de criptografía post cuántica Kyber y Dilithium desarrollados por Pq-crystals.
 
-## Instrucciones para compilar y ejecutar la biblioteca TLS.
+## Instrucciones para compilar
 Actualmente la compilación y ejecución solo puede realizarse en sistemas operativos linux, preferentemente Ubuntu o cualquier distro basada en este.
 
 Primero debes verificar si tienes instalado Openssh en tu sistema operativo, con el comando:
@@ -45,11 +45,18 @@ Ahora volvemos a la ruta principal de la bibliote TLS, y ejecutamos el comando:
 ```shell
   make
 ```
-Esto compilará los códigos fuentes y generará el archivo ejecutable del cliente y del servidor. Ahora solo ejecutamos el servidor y los clientes con los comandos:
+Esto compilará los códigos fuentes y generará el archivo ejecutable del cliente y del servidor.
+
+## Cómo usar
+
+Para ejecutar el servidor, solo ejecutamos el siguiente comando
 
 ```shell
   ./server
-  ./client 0 kyber
 ```
-Nota: el cliente recibe 2 parametros: el primero determina si queremos utilizar dilithium (0 no usar, 1 usar solo en el servidor, 2 usar en ambos) y el segundo el tipo de algoritmo que usará (kyber o newhope)
+En el caso del cliente, debemos pasa 2 parametros al momento de ejecutar el programa. El primer parametro indica si se quiere usar el canal seguro (1 para sí y 0 para no usarlo) y el segundo parametro especifica si queremos ultilizar dilithium (0 para no usarlo, 1 para usarlo solo del lado del cliente, y 2 para usarlo el ambos).
 
+Por ejemplo, si deseo utilizar el canal seguro y dilithium para el cliente y el servidor, uso el comando:
+```shell
+  ./client 1 2
+```
