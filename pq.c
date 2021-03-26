@@ -396,29 +396,54 @@ void safe_channel(int sock, int flag) {
     }
 }
 
+void unsafe_channel(int sock, int flag) {
+    unsigned char vault[BS];                                /* Vault concatenado en una cadena */
+
+    bzero(vault, BS);
+
+    if (flag == 0) { /* Codigo del cliente */ 
+        /* Obtener vault, como cadena de texto, desde archivo de texto */
+        getVaultStr((char *)vault, "matlabcode/results/Vault105-1.txt");
+        printf("Client: vault = %s\n", vault);
+        send(sock, vault, sizeof(vault), 0);
+        usleep(1000000); // sleep 0.1 seg
+    }
+
+    if (flag == 1) {    // Codigo del servidor
+        int len = recv(sock, &vault, sizeof(vault), 0);
+        vault[len] = '\0';
+
+        printf("Server: vault = %s\n", vault);
+    }
+}
+
 /****** -> TLS ******/
 /* opt2 = 0 no sign || opt2 = 1 server cert verify || opt2 = 2 both verify */
 void TLS(int sock, int opt1, int opt2, int flag) {
     unsigned long long initCycles;
-    if (opt2 == 0) {                        // No sign
-        cyclesDil = 0;
-        safe_channel(sock, flag);
-    } else if (opt2 == 1) {                 // Verificacion server cert
-        initCycles = rdtsc();
-        if (dilithium1(sock, flag)) {
-            return;
+    if(opt1 == 1) {
+        if (opt2 == 0) {                        // No sign
+            cyclesDil = 0;
+            safe_channel(sock, flag);
+        } else if (opt2 == 1) {                 // Verificacion server cert
+            initCycles = rdtsc();
+            if (dilithium1(sock, flag)) {
+                return;
+            }
+            cyclesDil = rdtsc() - initCycles;
+            safe_channel(sock, flag);
+        } else if (opt2 == 2) {                 // Both
+            initCycles = rdtsc();
+            if (dilithium1(sock, flag)) {
+                return;
+            }
+            if (dilithium1(sock, !flag)) {
+                return;
+            }
+            cyclesDil = rdtsc() - initCycles;
+            safe_channel(sock, flag);
         }
-        cyclesDil = rdtsc() - initCycles;
-        safe_channel(sock, flag);
-    } else if (opt2 == 2) {                 // Both
-        initCycles = rdtsc();
-        if (dilithium1(sock, flag)) {
-            return;
-        }
-        if (dilithium1(sock, !flag)) {
-            return;
-        }
-        cyclesDil = rdtsc() - initCycles;
-        safe_channel(sock, flag);
+    } else if(opt1 == 0){
+        unsafe_channel(sock, flag);
     }
 }

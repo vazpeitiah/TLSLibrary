@@ -55,8 +55,9 @@ int main(int argc, char const *argv[]) {
     }
 
     send(sock, argv[1], sizeof(argv[1]), 0);    // Send opt1 to server as string 
-    sleep(1);
+    usleep(1000000); // sleep 0.1 seg
     send(sock, argv[2], sizeof(argv[2]), 0);    // Send opt2 to server as string 
+    usleep(1000000); // sleep 0.1 seg
 
     unsigned long long initCycles = rdtsc();                         
     TLS(sock, opt1, opt2, FCLIENT);                         // Init pq functions 

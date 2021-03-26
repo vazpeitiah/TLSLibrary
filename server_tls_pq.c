@@ -66,9 +66,9 @@ int main(int argc, char const *argv[]) {
         len = recv(new_socket, &opt2, NSB, 0);  // Recive opt2 from client 
         opt2[len] = '\0';                       // put end of string character 
 
-        int opt1Int = atoi(opt2);   // Cast opt2 to integer 
+        int opt1Int = atoi(opt1);   // Cast opt2 to integer 
         int opt2Int = atoi(opt2);   // Cast opt2 to integer 
-        //printf("%d, %d/n", opt1Int, opt2Int);
+        printf("%d, %d \n", opt1Int, opt2Int);
 
         TLS(new_socket, opt1Int, opt2Int, FSERVER);    // Init pq functions 
 
