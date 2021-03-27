@@ -8,33 +8,33 @@ Actualmente la compilación y ejecución solo puede realizarse en sistemas opera
 Primero debes verificar si tienes instalado Openssh en tu sistema operativo, con el comando:
 
 ```shell
- openssl version
+openssl version
 ```
 
 Esto debe arrojar algo como:
 
 ```shell
- OpenSSL 1.1.1f  31 Mar 2020
+OpenSSL 1.1.1f  31 Mar 2020
 ```
 
 También es recomendable instalar el siguiente paquete:
 
 ```shell
- sudo apt-get install libssl-dev
+sudo apt-get install libssl-dev
 ```
 
 Después debes agregar 3 banderas al sistema, para ello ejecutamos los comandos:
 
 ```shell
- export CFLAGS="-I/usr/local/opt/openssl@1.1/include"
- export NISTFLAGS="-I/usr/local/opt/openssl@1.1/include"
- export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
+export CFLAGS="-I/usr/local/opt/openssl@1.1/include"
+export NISTFLAGS="-I/usr/local/opt/openssl@1.1/include"
+export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
 ```
 
 Luego, debemos crear los archivos .so de Kyber. Para ello, nos movemos a la carpeta `kyber/ref/` y ejecutamos el comando:
 
 ```shell
-  make shared
+make shared
 ```
 El comando `make shared`, genera nueve archivos con extensión .so. Nosotros sólo utilizaremos dos archivos: 
 
@@ -43,7 +43,7 @@ El comando `make shared`, genera nueve archivos con extensión .so. Nosotros só
 Ahora volvemos a la ruta principal de la bibliote TLS, y ejecutamos el comando:
 
 ```shell
-  make
+make
 ```
 Esto compilará los códigos fuentes y generará el archivo ejecutable del cliente y del servidor.
 
@@ -52,11 +52,11 @@ Esto compilará los códigos fuentes y generará el archivo ejecutable del clien
 Para ejecutar el servidor, solo ejecutamos el siguiente comando
 
 ```shell
-  ./server
+./server
 ```
 En el caso del cliente, debemos pasa 2 parametros al momento de ejecutar el programa. El primer parametro indica si se quiere usar el canal seguro (1 para sí y 0 para no usarlo) y el segundo parametro especifica si queremos ultilizar dilithium (0 para no usarlo, 1 para usarlo solo del lado del cliente, y 2 para usarlo el ambos).
 
 Por ejemplo, si deseo utilizar el canal seguro y dilithium para el cliente y el servidor, uso el comando:
 ```shell
-  ./client 1 2
+./client 1 2
 ```
