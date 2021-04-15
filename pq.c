@@ -379,7 +379,7 @@ void safe_channel(int sock, int flag) {
         /* Obtener vault, como cadena de texto, desde archivo de texto */
         getVaultStr((char *)vault, "valores_de_prueba/Vault105-1.txt");
         shake256(ss, pqcrystals_kyber1024_ref_BYTES, vault, BS);
-        printf("Client: vault = %s\n", vault);
+        printf("Client: vault =\n %s\n", vault);
     }
 
     unsigned long long initCycles = rdtsc(); 
@@ -392,7 +392,7 @@ void safe_channel(int sock, int flag) {
     cyclesAES = rdtsc() - initCycles;
 
     if (flag == 1) {    // Codigo del servidor
-        printf("Server: vault = %s\n", vault);
+        printf("Server: vault =\n%s\n", vault);
     }
 }
 
@@ -404,7 +404,7 @@ void unsafe_channel(int sock, int flag) {
     if (flag == 0) { /* Codigo del cliente */ 
         /* Obtener vault, como cadena de texto, desde archivo de texto */
         getVaultStr((char *)vault, "valores_de_prueba/Vault105-1.txt");
-        printf("Client: vault = %s\n", vault);
+        printf("Client: vault =\n%s\n", vault);
         send(sock, vault, sizeof(vault), 0);
         usleep(1000000); // sleep 0.1 seg
     }
@@ -413,7 +413,7 @@ void unsafe_channel(int sock, int flag) {
         int len = recv(sock, &vault, sizeof(vault), 0);
         vault[len] = '\0';
 
-        printf("Server: vault = %s\n", vault);
+        printf("Server: vault =\n%s\n", vault);
     }
 }
 
