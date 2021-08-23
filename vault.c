@@ -80,10 +80,10 @@ void getVaultStr(char *vault, const char *path) {
 
     size_t cols, rows;                              /* Numero de columnas y filas de la matriz */
     int **matrix = readVault(&rows, &cols, path);   /* Leer matriz vault desde archivo de texto */
-    strcat(vault, "[");
+    //strcat(vault, "[");
     for(size_t i = 0; i < rows; ++i)
     {
-        strcat(vault, "(");
+        //strcat(vault, "(");
         for(size_t j = 0; j < cols; ++j){
             int length = snprintf( NULL, 0, "%d", matrix[i][j] );   /* Obtener longitud de caracteres del valor v[i][j] */
             char* str = malloc( length + 1 );                       /* Reservar memoria para esta longitud */
@@ -92,13 +92,14 @@ void getVaultStr(char *vault, const char *path) {
             if(!(i == rows - 1 && j == cols - 1) && j != 1)                   /* Separar datos con una "coma", exepcto el ultimo */
                 strcat(vault, ", ");
             else if(i != rows -1)
-                strcat(vault, "), ");
+		strcat(vault, "\n");
+                //strcat(vault, "), ");
                 //strcat(vault, ", ");
             
         }
          
     }
-    strcat(vault, ")]");
+    //strcat(vault, ")]");
 
     for(size_t i = 0; i < rows; ++i)
         free(matrix[i]);

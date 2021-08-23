@@ -44,8 +44,8 @@ int main(int argc, char const *argv[]) {
     serv_addr.sin_port = htons(PORT); // Assingn PORT to address server 
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    // if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-    if (inet_pton(AF_INET, "192.168.56.103", &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    //if (inet_pton(AF_INET, "192.168.56.103", &serv_addr.sin_addr) <= 0) {
         printf("\nInvalid address/ Address not supported \n");
         return -1;
     }
